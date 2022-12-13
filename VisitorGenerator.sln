@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33103.184
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VisitorGenerator", "VisitorGenerator\VisitorGenerator.csproj", "{90A78B7A-504F-432B-85B0-2E1BA3A4694F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VisitorGenerator.Samples", "VisitorGenerator.Samples\VisitorGenerator.Samples.csproj", "{4AA3C709-FD14-4C0D-B02F-0D393332A173}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{90A78B7A-504F-432B-85B0-2E1BA3A4694F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{90A78B7A-504F-432B-85B0-2E1BA3A4694F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{90A78B7A-504F-432B-85B0-2E1BA3A4694F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{90A78B7A-504F-432B-85B0-2E1BA3A4694F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4AA3C709-FD14-4C0D-B02F-0D393332A173}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4AA3C709-FD14-4C0D-B02F-0D393332A173}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4AA3C709-FD14-4C0D-B02F-0D393332A173}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4AA3C709-FD14-4C0D-B02F-0D393332A173}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A1426B01-DF06-4DE7-B8FD-692DD6B5C04A}
+	EndGlobalSection
+EndGlobal
