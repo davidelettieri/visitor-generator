@@ -25,4 +25,4 @@ jobs:
     - name: Test
       run: dotnet test --no-build --verbosity normal
     - name: Publish the package to GPR
-      run: dotnet nuget push ROP/bin/Release/*.nupkg
+      run: dotnet nuget push VisitorGenerator/bin/Release/*.nupkg
