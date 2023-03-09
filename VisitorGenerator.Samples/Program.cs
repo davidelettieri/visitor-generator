@@ -1,6 +1,5 @@
-﻿using VisitorGenerator.Samples.AdditionalNodes;
-
-namespace VisitorGenerator.Samples;
+﻿using VisitorGenerator;
+using VisitorGenerator.Samples.AdditionalNodes;
 
 internal class Program
 {

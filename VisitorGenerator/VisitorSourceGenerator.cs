@@ -9,6 +9,7 @@ namespace VisitorGenerator
     public class Walker : CSharpSyntaxWalker
     {
         public List<ClassDeclarationSyntax> ImplementingTypes { get; } = new List<ClassDeclarationSyntax>();
+
         public Walker(string interfaceName)
         {
             InterfaceName = interfaceName;
@@ -48,6 +49,7 @@ namespace VisitorGenerator
     }
 }
 ";
+
         public void Execute(GeneratorExecutionContext context)
         {
             if (!(context.SyntaxReceiver is SyntaxReceiver receiver))
@@ -83,43 +85,90 @@ namespace VisitorGenerator
                         var name = t.Identifier.ToFullString().Trim();
                         var nodeSB = new StringBuilder();
                         nodeSB.AppendLine("using System;");
-                        nodeSB.Append("namespace ");
-                        nodeSB.AppendLine(nodeSymbol.ContainingNamespace.ToString());
-                        nodeSB.AppendLine("{");
-                        nodeSB.Append("    public partial class ");
+                        var indent = false;
+
+                        if (!nodeSymbol.ContainingNamespace.IsGlobalNamespace)
+                        {
+                            indent = true;
+                            nodeSB.Append("namespace ");
+                            nodeSB.AppendLine(nodeSymbol.ContainingNamespace.ToString());
+                            nodeSB.AppendLine("{");
+                        }
+
+                        IndentCurrentLineIfRequired(indent, nodeSB);
+                        nodeSB.Append("public partial class ");
                         nodeSB.AppendLine(name);
-                        nodeSB.AppendLine("    {");
-                        nodeSB.Append("        public T Accept<T>(").Append(visitorTypeName).AppendLine(" visitor) => visitor.Visit(this);");
-                        nodeSB.AppendLine("    }");
-                        nodeSB.AppendLine("}");
+                        IndentCurrentLineIfRequired(indent, nodeSB);
+                        nodeSB.AppendLine("{");
+                        nodeSB.Append("    public T Accept<T>(").Append(visitorTypeName)
+                            .AppendLine(" visitor) => visitor.Visit(this);");
+                        IndentCurrentLineIfRequired(indent, nodeSB);
+                        nodeSB.AppendLine("}");                        
+
+
+                        if (!nodeSymbol.ContainingNamespace.IsGlobalNamespace)
+                        {
+                            nodeSB.AppendLine("}");
+                        }
+
                         context.AddSource(name + ".g.cs", nodeSB.ToString());
 
-                        if (!nodeSymbol.ContainingNamespace.Equals(interfaceSymbol.ContainingNamespace, SymbolEqualityComparer.Default))
+                        if (!nodeSymbol.ContainingNamespace.Equals(interfaceSymbol.ContainingNamespace,
+                                SymbolEqualityComparer.Default))
                         {
                             sb.Append("using ").Append(nodeSymbol.ContainingNamespace.ToString()).AppendLine(";");
                         }
                     }
 
-                    sb.Append("namespace ");
-                    sb.AppendLine(interfaceSymbol.ContainingNamespace.ToString());
+                    var indentInterface = false;
+
+                    if (!interfaceSymbol.ContainingNamespace.IsGlobalNamespace)
+                    {
+                        indentInterface = true;
+                        sb.Append("namespace ");
+                        sb.AppendLine(interfaceSymbol.ContainingNamespace.ToString());
+                        sb.AppendLine("{");
+                    }
+
+                    IndentCurrentLineIfRequired(indentInterface, sb);
+                    sb.Append("public partial interface ").AppendLine(interfaceName);
+                    IndentCurrentLineIfRequired(indentInterface, sb);
                     sb.AppendLine("{");
-                    sb.Append("    public partial interface ").AppendLine(interfaceName);
-                    sb.AppendLine("    {");
-                    sb.Append("        T Accept<T>(").Append(visitorTypeName).AppendLine(" visitor);");
-                    sb.AppendLine("    }");
-                    sb.Append("    public interface ");
+                    IndentCurrentLineIfRequired(indentInterface, sb);
+                    sb.Append("    T Accept<T>(").Append(visitorTypeName).AppendLine(" visitor);");
+                    IndentCurrentLineIfRequired(indentInterface, sb);
+                    sb.AppendLine("}");
+                    IndentCurrentLineIfRequired(indentInterface, sb);
+                    sb.Append("public interface ");
                     sb.AppendLine(visitorTypeName);
-                    sb.AppendLine("    {");
+                    IndentCurrentLineIfRequired(indentInterface, sb);
+                    sb.AppendLine("{");
                     foreach (var t in walker.ImplementingTypes)
                     {
-                        sb.Append("        T Visit(");
+                        IndentCurrentLineIfRequired(indentInterface, sb);
+                        sb.Append("    T Visit(");
                         sb.Append(t.Identifier.ToFullString());
                         sb.AppendLine("node);");
                     }
-                    sb.AppendLine("    }");
+
+                    IndentCurrentLineIfRequired(indentInterface, sb);
                     sb.AppendLine("}");
+
+                    if (!interfaceSymbol.ContainingNamespace.IsGlobalNamespace)
+                    {
+                        sb.AppendLine("}");
+                    }
+
                     context.AddSource(interfaceName + "Visitor.g.cs", sb.ToString());
                 }
+            }
+        }
+
+        private static void IndentCurrentLineIfRequired(bool indent, StringBuilder nodeSB)
+        {
+            if (indent)
+            {
+                nodeSB.Append("    ");
             }
         }
 
@@ -156,6 +205,7 @@ namespace VisitorGenerator
                                 break;
                             }
                         }
+
                         if (added)
                         {
                             break;
