@@ -49,11 +49,3 @@ public partial class Failure
 ## Using the package
 
 The package is published here on github. Please follow the documentation to add the nuget source https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-nuget-registry
-
-## Improvements
-
-- `void` visitor interface
-- `Task` visitor interface
-- `Task<T>` visitor interface
-- publish to nuget.org
-- tests!
