@@ -13,6 +13,63 @@ internal class Program
     }
 }
 
+public class Visitor2 : OpResultVisitor<Task>
+{
+    public Task Visit(Node node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task Visit(Success node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task Visit(Failure node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task Visit(InvalidOperation node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task Visit(NoOperation node)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+public class AsyncVisitor : OpResultVisitor<Task<int>>
+{
+    public async Task<int> Visit(Node node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<int> Visit(Success node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<int> Visit(Failure node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<int> Visit(InvalidOperation node)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<int> Visit(NoOperation node)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+
 public class Visitor : OpResultVisitor<bool>
 {
     public bool Visit(Success node)

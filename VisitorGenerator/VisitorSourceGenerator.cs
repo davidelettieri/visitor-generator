@@ -59,7 +59,6 @@ namespace VisitorGenerator
             {
                 var interfaceName = item.Identifier.ToFullString().Trim();
                 var walker = new Walker(interfaceName);
-                var visitorTypeName = interfaceName + "Visitor<T>";
 
                 var interfaceSemanticModel = context.Compilation.GetSemanticModel(item.SyntaxTree);
                 var interfaceSymbol = interfaceSemanticModel.GetDeclaredSymbol(item);
@@ -73,95 +72,128 @@ namespace VisitorGenerator
                     walker.Visit(root);
                 }
 
-                if (walker.ImplementingTypes.Count > 0)
+                if (walker.ImplementingTypes.Count == 0)
                 {
-                    var sb = new StringBuilder();
-                    sb.AppendLine("using System;");
-
-                    foreach (var t in walker.ImplementingTypes)
-                    {
-                        var nodeSemanticModel = context.Compilation.GetSemanticModel(t.SyntaxTree);
-                        var nodeSymbol = nodeSemanticModel.GetDeclaredSymbol(t);
-                        var name = t.Identifier.ToFullString().Trim();
-                        var nodeSB = new StringBuilder();
-                        nodeSB.AppendLine("using System;");
-                        var indent = false;
-
-                        if (!nodeSymbol.ContainingNamespace.IsGlobalNamespace)
-                        {
-                            indent = true;
-                            nodeSB.Append("namespace ");
-                            nodeSB.AppendLine(nodeSymbol.ContainingNamespace.ToString());
-                            nodeSB.AppendLine("{");
-                        }
-
-                        IndentCurrentLineIfRequired(indent, nodeSB);
-                        nodeSB.Append("public partial class ");
-                        nodeSB.AppendLine(name);
-                        IndentCurrentLineIfRequired(indent, nodeSB);
-                        nodeSB.AppendLine("{");
-                        nodeSB.Append("    public T Accept<T>(").Append(visitorTypeName)
-                            .AppendLine(" visitor) => visitor.Visit(this);");
-                        IndentCurrentLineIfRequired(indent, nodeSB);
-                        nodeSB.AppendLine("}");                        
-
-
-                        if (!nodeSymbol.ContainingNamespace.IsGlobalNamespace)
-                        {
-                            nodeSB.AppendLine("}");
-                        }
-
-                        context.AddSource(name + ".g.cs", nodeSB.ToString());
-
-                        if (!nodeSymbol.ContainingNamespace.Equals(interfaceSymbol.ContainingNamespace,
-                                SymbolEqualityComparer.Default))
-                        {
-                            sb.Append("using ").Append(nodeSymbol.ContainingNamespace.ToString()).AppendLine(";");
-                        }
-                    }
-
-                    var indentInterface = false;
-
-                    if (!interfaceSymbol.ContainingNamespace.IsGlobalNamespace)
-                    {
-                        indentInterface = true;
-                        sb.Append("namespace ");
-                        sb.AppendLine(interfaceSymbol.ContainingNamespace.ToString());
-                        sb.AppendLine("{");
-                    }
-
-                    IndentCurrentLineIfRequired(indentInterface, sb);
-                    sb.Append("public partial interface ").AppendLine(interfaceName);
-                    IndentCurrentLineIfRequired(indentInterface, sb);
-                    sb.AppendLine("{");
-                    IndentCurrentLineIfRequired(indentInterface, sb);
-                    sb.Append("    T Accept<T>(").Append(visitorTypeName).AppendLine(" visitor);");
-                    IndentCurrentLineIfRequired(indentInterface, sb);
-                    sb.AppendLine("}");
-                    IndentCurrentLineIfRequired(indentInterface, sb);
-                    sb.Append("public interface ");
-                    sb.AppendLine(visitorTypeName);
-                    IndentCurrentLineIfRequired(indentInterface, sb);
-                    sb.AppendLine("{");
-                    foreach (var t in walker.ImplementingTypes)
-                    {
-                        IndentCurrentLineIfRequired(indentInterface, sb);
-                        sb.Append("    T Visit(");
-                        sb.Append(t.Identifier.ToFullString());
-                        sb.AppendLine("node);");
-                    }
-
-                    IndentCurrentLineIfRequired(indentInterface, sb);
-                    sb.AppendLine("}");
-
-                    if (!interfaceSymbol.ContainingNamespace.IsGlobalNamespace)
-                    {
-                        sb.AppendLine("}");
-                    }
-
-                    context.AddSource(interfaceName + "Visitor.g.cs", sb.ToString());
+                    return;
                 }
+                var sb = new StringBuilder();
+                sb.AppendLine("using System;");
+
+                var visitorName = interfaceName + "Visitor<T>";
+                var voidVisitorName = interfaceName + "Visitor";
+
+                foreach (var t in walker.ImplementingTypes)
+                {
+                    var nodeSemanticModel = context.Compilation.GetSemanticModel(t.SyntaxTree);
+                    var nodeSymbol = nodeSemanticModel.GetDeclaredSymbol(t);
+                    var name = t.Identifier.ToFullString().Trim();
+                    var nodeSB = new StringBuilder();
+                    nodeSB.AppendLine("using System;");
+                    var indent = false;
+
+                    if (!nodeSymbol.ContainingNamespace.IsGlobalNamespace)
+                    {
+                        indent = true;
+                        nodeSB.Append("namespace ");
+                        nodeSB.AppendLine(nodeSymbol.ContainingNamespace.ToString());
+                        nodeSB.AppendLine("{");
+                    }
+
+                    IndentCurrentLineIfRequired(indent, nodeSB);
+                    nodeSB.Append("public partial class ");
+                    nodeSB.AppendLine(name);
+                    IndentCurrentLineIfRequired(indent, nodeSB);
+                    nodeSB.AppendLine("{");
+                    nodeSB.Append("    public T Accept<T>(").Append(visitorName)
+                        .AppendLine(" visitor) => visitor.Visit(this);");
+                    nodeSB.Append("    public void Accept(").Append(voidVisitorName)
+                        .AppendLine(" visitor) => visitor.Visit(this);");
+
+                    IndentCurrentLineIfRequired(indent, nodeSB);
+                    nodeSB.AppendLine("}");
+
+                    if (!nodeSymbol.ContainingNamespace.IsGlobalNamespace)
+                    {
+                        nodeSB.AppendLine("}");
+                    }
+
+                    context.AddSource(name + ".g.cs", nodeSB.ToString());
+
+                    if (!nodeSymbol.ContainingNamespace.Equals(interfaceSymbol.ContainingNamespace,
+                            SymbolEqualityComparer.Default))
+                    {
+                        sb.Append("using ").Append(nodeSymbol.ContainingNamespace.ToString()).AppendLine(";");
+                    }
+                }
+
+                var indentInterface = false;
+
+                if (!interfaceSymbol.ContainingNamespace.IsGlobalNamespace)
+                {
+                    indentInterface = true;
+                    sb.Append("namespace ");
+                    sb.AppendLine(interfaceSymbol.ContainingNamespace.ToString());
+                    sb.AppendLine("{");
+                }
+
+                IndentCurrentLineIfRequired(indentInterface, sb);
+                sb.Append("public partial interface ").AppendLine(interfaceName);
+                IndentCurrentLineIfRequired(indentInterface, sb);
+                sb.AppendLine("{");
+                IndentCurrentLineIfRequired(indentInterface, sb);
+                sb.Append("    T Accept<T>(").Append(visitorName).AppendLine(" visitor);");
+                sb.Append("    void Accept(").Append(voidVisitorName).AppendLine(" visitor);");
+                IndentCurrentLineIfRequired(indentInterface, sb);
+                sb.AppendLine("}");
+
+                AddVisitorInterface(walker, sb, indentInterface, visitorName);
+                AddVoidVisitorInterface(walker, sb, indentInterface, voidVisitorName);
+
+                if (!interfaceSymbol.ContainingNamespace.IsGlobalNamespace)
+                {
+                    sb.AppendLine("}");
+                }
+
+                context.AddSource(interfaceName + "Visitor.g.cs", sb.ToString());
             }
+        }
+
+        private static void AddVisitorInterface(Walker walker, StringBuilder sb, bool indentInterface, string interfaceName)
+        {
+            IndentCurrentLineIfRequired(indentInterface, sb);
+            sb.Append("public interface ");
+            sb.AppendLine(interfaceName);
+            IndentCurrentLineIfRequired(indentInterface, sb);
+            sb.AppendLine("{");
+            foreach (var t in walker.ImplementingTypes)
+            {
+                IndentCurrentLineIfRequired(indentInterface, sb);
+                sb.Append("    T Visit(");
+                sb.Append(t.Identifier.ToFullString());
+                sb.AppendLine("node);");
+            }
+
+            IndentCurrentLineIfRequired(indentInterface, sb);
+            sb.AppendLine("}");
+        }
+
+        private static void AddVoidVisitorInterface(Walker walker, StringBuilder sb, bool indentInterface, string interfaceName)
+        {
+            IndentCurrentLineIfRequired(indentInterface, sb);
+            sb.Append("public interface ");
+            sb.AppendLine(interfaceName);
+            IndentCurrentLineIfRequired(indentInterface, sb);
+            sb.AppendLine("{");
+            foreach (var t in walker.ImplementingTypes)
+            {
+                IndentCurrentLineIfRequired(indentInterface, sb);
+                sb.Append("    void Visit(");
+                sb.Append(t.Identifier.ToFullString());
+                sb.AppendLine("node);");
+            }
+
+            IndentCurrentLineIfRequired(indentInterface, sb);
+            sb.AppendLine("}");
         }
 
         private static void IndentCurrentLineIfRequired(bool indent, StringBuilder nodeSB)
