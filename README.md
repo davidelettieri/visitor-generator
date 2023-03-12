@@ -52,8 +52,8 @@ The package is published here on github. Please follow the documentation to add 
 
 ## Improvements
 
-- void visitor interface
-- Task visitor interface
-- Task<T> visitor interface
+- `void` visitor interface
+- `Task` visitor interface
+- `Task<T>` visitor interface
 - publish to nuget.org
 - tests!
