@@ -5,6 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace VisitorGenerator.Samples.AdditionalNodes;
-public partial class Node : OpResult
+public partial class Node : IOpResult
 {
 }

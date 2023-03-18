@@ -4,6 +4,7 @@
 		<TargetFramework>netstandard2.0</TargetFramework>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<Title>VisitorGenerator</Title>
+		<LangVersion>11</LangVersion>
 	</PropertyGroup>
 
 	<ItemGroup>

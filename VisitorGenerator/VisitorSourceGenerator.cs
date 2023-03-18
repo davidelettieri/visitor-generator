@@ -35,12 +35,12 @@ namespace VisitorGenerator
     [Generator]
     public class VisitorSourceGenerator : ISourceGenerator
     {
-        private const string attributeText = @"
+        private const string AttributeText = """
 using System;
 namespace VisitorGenerator
 {
     [AttributeUsage(AttributeTargets.Interface, Inherited = false, AllowMultiple = false)]
-    [System.Diagnostics.Conditional(""VisitorSourceGenerator_DEBUG"")]
+    [System.Diagnostics.Conditional("VisitorSourceGenerator_DEBUG")]
     sealed class VisitorNodeAttribute : Attribute
     {
         public VisitorNodeAttribute()
@@ -48,7 +48,7 @@ namespace VisitorGenerator
         }
     }
 }
-";
+""";
 
         public void Execute(GeneratorExecutionContext context)
         {
@@ -77,8 +77,7 @@ namespace VisitorGenerator
                     return;
                 }
                 var sb = new StringBuilder();
-                sb.AppendLine("using System;");
-
+                
                 var visitorName = interfaceName + "Visitor<T>";
                 var voidVisitorName = interfaceName + "Visitor";
 
@@ -88,7 +87,6 @@ namespace VisitorGenerator
                     var nodeSymbol = nodeSemanticModel.GetDeclaredSymbol(t);
                     var name = t.Identifier.ToFullString().Trim();
                     var nodeSB = new StringBuilder();
-                    nodeSB.AppendLine("using System;");
                     var indent = false;
 
                     if (!nodeSymbol.ContainingNamespace.IsGlobalNamespace)
@@ -110,11 +108,11 @@ namespace VisitorGenerator
                         .AppendLine(" visitor) => visitor.Visit(this);");
 
                     IndentCurrentLineIfRequired(indent, nodeSB);
-                    nodeSB.AppendLine("}");
+                    nodeSB.Append("}");
 
                     if (!nodeSymbol.ContainingNamespace.IsGlobalNamespace)
                     {
-                        nodeSB.AppendLine("}");
+                        nodeSB.AppendLine("").Append("}");
                     }
 
                     context.AddSource(name + ".g.cs", nodeSB.ToString());
@@ -122,7 +120,7 @@ namespace VisitorGenerator
                     if (!nodeSymbol.ContainingNamespace.Equals(interfaceSymbol.ContainingNamespace,
                             SymbolEqualityComparer.Default))
                     {
-                        sb.Append("using ").Append(nodeSymbol.ContainingNamespace.ToString()).AppendLine(";");
+                        sb.Append("using ").Append(nodeSymbol.ContainingNamespace).AppendLine(";");
                     }
                 }
 
@@ -151,7 +149,7 @@ namespace VisitorGenerator
 
                 if (!interfaceSymbol.ContainingNamespace.IsGlobalNamespace)
                 {
-                    sb.AppendLine("}");
+                    sb.AppendLine("").Append("}");
                 }
 
                 context.AddSource(interfaceName + "Visitor.g.cs", sb.ToString());
@@ -193,7 +191,7 @@ namespace VisitorGenerator
             }
 
             IndentCurrentLineIfRequired(indentInterface, sb);
-            sb.AppendLine("}");
+            sb.Append("}");
         }
 
         private static void IndentCurrentLineIfRequired(bool indent, StringBuilder nodeSB)
@@ -206,7 +204,7 @@ namespace VisitorGenerator
 
         public void Initialize(GeneratorInitializationContext context)
         {
-            context.RegisterForPostInitialization((i) => i.AddSource("VisitorNodeAttribute.g.cs", attributeText));
+            context.RegisterForPostInitialization((i) => i.AddSource("VisitorNodeAttribute.g.cs", AttributeText));
             context.RegisterForSyntaxNotifications(() => new SyntaxReceiver());
         }
 
