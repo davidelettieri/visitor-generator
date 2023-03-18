@@ -24,7 +24,7 @@ With these sample the generator will produce the following code
 // Augment the base interface with the required Accept method
 public partial interface INode
 {
-    T Accept<T>(OpResultVisitor<T> visitor);
+    T Accept<T>(INodeVisitor<T> visitor);
 }
 
 // Definine the visitor interface
@@ -37,12 +37,12 @@ public interface INodeVisitor<T>
 // Implement the Accept<T> method on the nodes
 public partial class Success
 {
-    public T Accept<T>(OpResultVisitor<T> visitor) => visitor.Visit(this);
+    public T Accept<T>(INodeVisitor<T> visitor) => visitor.Visit(this);
 }
 
 public partial class Failure
 {
-    public T Accept<T>(OpResultVisitor<T> visitor) => visitor.Visit(this);
+    public T Accept<T>(INodeVisitor<T> visitor) => visitor.Visit(this);
 }
 ```
 
