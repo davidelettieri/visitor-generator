@@ -25,4 +25,4 @@ jobs:
       - name: Build
         run: dotnet build --no-restore -c Release
       - name: 
-        run: dotnet test --no-build --verbosity n
+        run: dotnet test --no-build --verbosity n -c Release
