@@ -1,7 +1,10 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using System;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
 using System.Text;
 
 namespace VisitorGenerator
@@ -15,7 +18,7 @@ namespace VisitorGenerator
             InterfaceName = interfaceName;
         }
 
-        public string InterfaceName { get; }
+        private string InterfaceName { get; }
 
         public override void VisitClassDeclaration(ClassDeclarationSyntax node)
         {
@@ -32,8 +35,8 @@ namespace VisitorGenerator
         }
     }
 
-    [Generator]
-    public class VisitorSourceGenerator : ISourceGenerator
+    [Generator(LanguageNames.CSharp)]
+    public class VisitorSourceGenerator : IIncrementalGenerator
     {
         private const string AttributeText = """
 using System;
@@ -50,20 +53,133 @@ namespace VisitorGenerator
 }
 """;
 
-        public void Execute(GeneratorExecutionContext context)
+        private static void AddVisitorInterface(Walker walker, StringBuilder sb, bool indentInterface,
+            string interfaceName)
         {
-            if (!(context.SyntaxReceiver is SyntaxReceiver receiver))
-                return;
-
-            foreach (var item in receiver.Interfaces)
+            IndentCurrentLineIfRequired(indentInterface, sb);
+            sb.Append("public interface ");
+            sb.AppendLine(interfaceName);
+            IndentCurrentLineIfRequired(indentInterface, sb);
+            sb.AppendLine("{");
+            foreach (var t in walker.ImplementingTypes)
             {
+                IndentCurrentLineIfRequired(indentInterface, sb);
+                sb.Append("    T Visit(");
+                sb.Append(t.Identifier.ToFullString());
+                sb.AppendLine("node);");
+            }
+
+            IndentCurrentLineIfRequired(indentInterface, sb);
+            sb.AppendLine("}");
+        }
+
+        private static void AddVoidVisitorInterface(Walker walker, StringBuilder sb, bool indentInterface,
+            string interfaceName)
+        {
+            IndentCurrentLineIfRequired(indentInterface, sb);
+            sb.Append("public interface ");
+            sb.AppendLine(interfaceName);
+            IndentCurrentLineIfRequired(indentInterface, sb);
+            sb.AppendLine("{");
+            foreach (var t in walker.ImplementingTypes)
+            {
+                IndentCurrentLineIfRequired(indentInterface, sb);
+                sb.Append("    void Visit(");
+                sb.Append(t.Identifier.ToFullString());
+                sb.AppendLine("node);");
+            }
+
+            IndentCurrentLineIfRequired(indentInterface, sb);
+            sb.Append("}");
+        }
+
+        private static void IndentCurrentLineIfRequired(bool indent, StringBuilder nodeSB)
+        {
+            if (indent)
+            {
+                nodeSB.Append("    ");
+            }
+        }
+
+        /// <summary>
+        /// Created on demand before each generation pass
+        /// </summary>
+        class SyntaxReceiver : ISyntaxReceiver
+        {
+            public List<InterfaceDeclarationSyntax> Interfaces { get; } = new List<InterfaceDeclarationSyntax>();
+
+            /// <summary>
+            /// Called for every syntax node in the compilation, we can inspect the nodes and save any information useful for generation
+            /// </summary>
+            public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
+            {
+                // any field with at least one attribute is a candidate for property generation
+                if (syntaxNode is InterfaceDeclarationSyntax decl && decl.AttributeLists.Count > 0)
+                {
+                    var added = false;
+                    foreach (var attributeList in decl.AttributeLists)
+                    {
+                        foreach (var attribute in attributeList.Attributes)
+                        {
+                            if (attribute.ToString() == "VisitorNode")
+                            {
+                                Interfaces.Add(decl);
+                                added = true;
+                                break;
+                            }
+                        }
+
+                        if (added)
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        public void Initialize(IncrementalGeneratorInitializationContext context)
+        {
+            IncrementalValuesProvider<InterfaceDeclarationSyntax?> classDeclarations = context.SyntaxProvider
+                .CreateSyntaxProvider(
+                    predicate: static (s, _) => IsSyntaxTargetForGeneration(s),
+                    transform: static (ctx, _) => GetSemanticTargetForGeneration(ctx))
+                .Where(static m => m is not null);
+
+            IncrementalValueProvider<(Compilation Left, ImmutableArray<InterfaceDeclarationSyntax?> Right)>
+                compilationAndClasses =
+                    context.CompilationProvider.Combine(classDeclarations.Collect());
+
+            context.RegisterPostInitializationOutput(i => i.AddSource("VisitorNodeAttribute.g.cs", AttributeText));
+            context.RegisterSourceOutput(compilationAndClasses,
+                static (spc, source) => Execute(source.Left, source.Right, spc));
+        }
+
+        private static void Execute(Compilation compilation, ImmutableArray<InterfaceDeclarationSyntax?> classes,
+            SourceProductionContext context)
+        {
+            if (classes.IsDefaultOrEmpty)
+            {
+                // nothing to do yet
+                return;
+            }
+
+            var interfaces = classes.Distinct();
+
+            foreach (var item in interfaces)
+            {
+                if (item is null)
+                {
+                    continue;
+                }
+
                 var interfaceName = item.Identifier.ToFullString().Trim();
                 var walker = new Walker(interfaceName);
 
-                var interfaceSemanticModel = context.Compilation.GetSemanticModel(item.SyntaxTree);
+                var interfaceSemanticModel = compilation.GetSemanticModel(item.SyntaxTree);
                 var interfaceSymbol = interfaceSemanticModel.GetDeclaredSymbol(item);
 
-                foreach (var syntaxTree in context.Compilation.SyntaxTrees)
+                foreach (var syntaxTree in compilation.SyntaxTrees)
                 {
                     if (context.CancellationToken.IsCancellationRequested)
                         return;
@@ -76,46 +192,47 @@ namespace VisitorGenerator
                 {
                     return;
                 }
+
                 var sb = new StringBuilder();
-                
+
                 var visitorName = interfaceName + "Visitor<T>";
                 var voidVisitorName = interfaceName + "Visitor";
 
                 foreach (var t in walker.ImplementingTypes)
                 {
-                    var nodeSemanticModel = context.Compilation.GetSemanticModel(t.SyntaxTree);
+                    var nodeSemanticModel = compilation.GetSemanticModel(t.SyntaxTree);
                     var nodeSymbol = nodeSemanticModel.GetDeclaredSymbol(t);
                     var name = t.Identifier.ToFullString().Trim();
-                    var nodeSB = new StringBuilder();
+                    var nodeSb = new StringBuilder();
                     var indent = false;
 
                     if (!nodeSymbol.ContainingNamespace.IsGlobalNamespace)
                     {
                         indent = true;
-                        nodeSB.Append("namespace ");
-                        nodeSB.AppendLine(nodeSymbol.ContainingNamespace.ToString());
-                        nodeSB.AppendLine("{");
+                        nodeSb.Append("namespace ");
+                        nodeSb.AppendLine(nodeSymbol.ContainingNamespace.ToString());
+                        nodeSb.AppendLine("{");
                     }
 
-                    IndentCurrentLineIfRequired(indent, nodeSB);
-                    nodeSB.Append("public partial class ");
-                    nodeSB.AppendLine(name);
-                    IndentCurrentLineIfRequired(indent, nodeSB);
-                    nodeSB.AppendLine("{");
-                    nodeSB.Append("    public T Accept<T>(").Append(visitorName)
+                    IndentCurrentLineIfRequired(indent, nodeSb);
+                    nodeSb.Append("public partial class ");
+                    nodeSb.AppendLine(name);
+                    IndentCurrentLineIfRequired(indent, nodeSb);
+                    nodeSb.AppendLine("{");
+                    nodeSb.Append("    public T Accept<T>(").Append(visitorName)
                         .AppendLine(" visitor) => visitor.Visit(this);");
-                    nodeSB.Append("    public void Accept(").Append(voidVisitorName)
+                    nodeSb.Append("    public void Accept(").Append(voidVisitorName)
                         .AppendLine(" visitor) => visitor.Visit(this);");
 
-                    IndentCurrentLineIfRequired(indent, nodeSB);
-                    nodeSB.Append("}");
+                    IndentCurrentLineIfRequired(indent, nodeSb);
+                    nodeSb.Append("}");
 
                     if (!nodeSymbol.ContainingNamespace.IsGlobalNamespace)
                     {
-                        nodeSB.AppendLine("").Append("}");
+                        nodeSb.AppendLine("").Append("}");
                     }
 
-                    context.AddSource(name + ".g.cs", nodeSB.ToString());
+                    context.AddSource(name + ".g.cs", nodeSb.ToString());
 
                     if (!nodeSymbol.ContainingNamespace.Equals(interfaceSymbol.ContainingNamespace,
                             SymbolEqualityComparer.Default))
@@ -156,93 +273,39 @@ namespace VisitorGenerator
             }
         }
 
-        private static void AddVisitorInterface(Walker walker, StringBuilder sb, bool indentInterface, string interfaceName)
+        private static bool IsSyntaxTargetForGeneration(SyntaxNode syntaxNode)
+            => syntaxNode is InterfaceDeclarationSyntax {AttributeLists.Count: > 0} ids;
+
+        static InterfaceDeclarationSyntax? GetSemanticTargetForGeneration(GeneratorSyntaxContext context)
         {
-            IndentCurrentLineIfRequired(indentInterface, sb);
-            sb.Append("public interface ");
-            sb.AppendLine(interfaceName);
-            IndentCurrentLineIfRequired(indentInterface, sb);
-            sb.AppendLine("{");
-            foreach (var t in walker.ImplementingTypes)
+            var interfaceDecl = context.Node as InterfaceDeclarationSyntax;
+
+            if (interfaceDecl is null)
             {
-                IndentCurrentLineIfRequired(indentInterface, sb);
-                sb.Append("    T Visit(");
-                sb.Append(t.Identifier.ToFullString());
-                sb.AppendLine("node);");
+                return null;
             }
-
-            IndentCurrentLineIfRequired(indentInterface, sb);
-            sb.AppendLine("}");
-        }
-
-        private static void AddVoidVisitorInterface(Walker walker, StringBuilder sb, bool indentInterface, string interfaceName)
-        {
-            IndentCurrentLineIfRequired(indentInterface, sb);
-            sb.Append("public interface ");
-            sb.AppendLine(interfaceName);
-            IndentCurrentLineIfRequired(indentInterface, sb);
-            sb.AppendLine("{");
-            foreach (var t in walker.ImplementingTypes)
+            
+            foreach (AttributeListSyntax attributeListSyntax in interfaceDecl.AttributeLists)
             {
-                IndentCurrentLineIfRequired(indentInterface, sb);
-                sb.Append("    void Visit(");
-                sb.Append(t.Identifier.ToFullString());
-                sb.AppendLine("node);");
-            }
-
-            IndentCurrentLineIfRequired(indentInterface, sb);
-            sb.Append("}");
-        }
-
-        private static void IndentCurrentLineIfRequired(bool indent, StringBuilder nodeSB)
-        {
-            if (indent)
-            {
-                nodeSB.Append("    ");
-            }
-        }
-
-        public void Initialize(GeneratorInitializationContext context)
-        {
-            context.RegisterForPostInitialization((i) => i.AddSource("VisitorNodeAttribute.g.cs", AttributeText));
-            context.RegisterForSyntaxNotifications(() => new SyntaxReceiver());
-        }
-
-        /// <summary>
-        /// Created on demand before each generation pass
-        /// </summary>
-        class SyntaxReceiver : ISyntaxReceiver
-        {
-            public List<InterfaceDeclarationSyntax> Interfaces { get; } = new List<InterfaceDeclarationSyntax>();
-
-            /// <summary>
-            /// Called for every syntax node in the compilation, we can inspect the nodes and save any information useful for generation
-            /// </summary>
-            public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
-            {
-                // any field with at least one attribute is a candidate for property generation
-                if (syntaxNode is InterfaceDeclarationSyntax decl && decl.AttributeLists.Count > 0)
+                foreach (AttributeSyntax attributeSyntax in attributeListSyntax.Attributes)
                 {
-                    var added = false;
-                    foreach (var attributeList in decl.AttributeLists)
+                    IMethodSymbol? attributeSymbol = context.SemanticModel.GetSymbolInfo(attributeSyntax).Symbol as IMethodSymbol;
+                    if (attributeSymbol == null)
                     {
-                        foreach (var attribute in attributeList.Attributes)
-                        {
-                            if (attribute.ToString() == "VisitorNode")
-                            {
-                                Interfaces.Add(decl);
-                                added = true;
-                                break;
-                            }
-                        }
+                        continue;
+                    }
 
-                        if (added)
-                        {
-                            break;
-                        }
+                    INamedTypeSymbol attributeContainingTypeSymbol = attributeSymbol.ContainingType;
+                    string fullName = attributeContainingTypeSymbol.ToDisplayString();
+
+                    if (fullName == "VisitorGenerator.VisitorNodeAttribute")
+                    {
+                        return interfaceDecl;
                     }
                 }
             }
+
+            return null;
         }
     }
 }
