@@ -66,7 +66,7 @@ namespace VisitorGenerator
                 IndentCurrentLineIfRequired(indentInterface, sb);
                 sb.Append("    T Visit(");
                 sb.Append(t.Identifier.ToFullString());
-                sb.AppendLine("node);");
+                sb.AppendLine(" node);");
             }
 
             IndentCurrentLineIfRequired(indentInterface, sb);
@@ -86,7 +86,7 @@ namespace VisitorGenerator
                 IndentCurrentLineIfRequired(indentInterface, sb);
                 sb.Append("    void Visit(");
                 sb.Append(t.Identifier.ToFullString());
-                sb.AppendLine("node);");
+                sb.AppendLine(" node);");
             }
 
             IndentCurrentLineIfRequired(indentInterface, sb);
