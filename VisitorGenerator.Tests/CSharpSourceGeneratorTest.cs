@@ -19,15 +19,6 @@ public class CSharpSourceGeneratorTest<TSourceGenerator, TVerifier> : SourceGene
 
     public override string Language => LanguageNames.CSharp;
 
-    // protected override GeneratorDriver CreateGeneratorDriver(Project project, ImmutableArray<ISourceGenerator> sourceGenerators)
-    // {
-    //     return CSharpGeneratorDriver.Create(
-    //         sourceGenerators,
-    //         project.AnalyzerOptions.AdditionalFiles,
-    //         (CSharpParseOptions)project.ParseOptions!,
-    //         project.AnalyzerOptions.AnalyzerConfigOptionsProvider);
-    // }
-
     protected override CompilationOptions CreateCompilationOptions()
         => new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true);
 
