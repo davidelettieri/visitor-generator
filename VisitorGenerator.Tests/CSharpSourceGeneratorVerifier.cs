@@ -1,14 +1,14 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Testing.Verifiers;
+using Microsoft.CodeAnalysis.Testing;
 
 namespace VisitorGenerator.Tests;
 
 public static class CSharpSourceGeneratorVerifier<TSourceGenerator>
     where TSourceGenerator : IIncrementalGenerator, new()
 {
-    public class Test : CSharpSourceGeneratorTest<TSourceGenerator, XUnitVerifier>
+    public class Test : CSharpSourceGeneratorTest<TSourceGenerator, DefaultVerifier>
     {
         public Test()
         {

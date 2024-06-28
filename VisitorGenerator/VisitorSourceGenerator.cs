@@ -39,19 +39,19 @@ namespace VisitorGenerator
     public class VisitorSourceGenerator : IIncrementalGenerator
     {
         private const string AttributeText = """
-using System;
-namespace VisitorGenerator
-{
-    [AttributeUsage(AttributeTargets.Interface, Inherited = false, AllowMultiple = false)]
-    [System.Diagnostics.Conditional("VisitorSourceGenerator_DEBUG")]
-    sealed class VisitorNodeAttribute : Attribute
-    {
-        public VisitorNodeAttribute()
-        {
-        }
-    }
-}
-""";
+                                             using System;
+                                             namespace VisitorGenerator
+                                             {
+                                                 [AttributeUsage(AttributeTargets.Interface, Inherited = false, AllowMultiple = false)]
+                                                 [System.Diagnostics.Conditional("VisitorSourceGenerator_DEBUG")]
+                                                 sealed class VisitorNodeAttribute : Attribute
+                                                 {
+                                                     public VisitorNodeAttribute()
+                                                     {
+                                                     }
+                                                 }
+                                             }
+                                             """;
 
         private static void AddVisitorInterface(Walker walker, StringBuilder sb, bool indentInterface,
             string interfaceName)
@@ -179,6 +179,11 @@ namespace VisitorGenerator
                 var interfaceSemanticModel = compilation.GetSemanticModel(item.SyntaxTree);
                 var interfaceSymbol = interfaceSemanticModel.GetDeclaredSymbol(item);
 
+                if (interfaceSymbol is null)
+                {
+                    continue;
+                }
+
                 foreach (var syntaxTree in compilation.SyntaxTrees)
                 {
                     if (context.CancellationToken.IsCancellationRequested)
@@ -202,6 +207,12 @@ namespace VisitorGenerator
                 {
                     var nodeSemanticModel = compilation.GetSemanticModel(t.SyntaxTree);
                     var nodeSymbol = nodeSemanticModel.GetDeclaredSymbol(t);
+
+                    if (nodeSymbol is null)
+                    {
+                        continue;
+                    }
+
                     var name = t.Identifier.ToFullString().Trim();
                     var nodeSb = new StringBuilder();
                     var indent = false;
@@ -274,7 +285,7 @@ namespace VisitorGenerator
         }
 
         private static bool IsSyntaxTargetForGeneration(SyntaxNode syntaxNode)
-            => syntaxNode is InterfaceDeclarationSyntax {AttributeLists.Count: > 0} ids;
+            => syntaxNode is InterfaceDeclarationSyntax { AttributeLists.Count: > 0 } ids;
 
         static InterfaceDeclarationSyntax? GetSemanticTargetForGeneration(GeneratorSyntaxContext context)
         {
@@ -284,12 +295,13 @@ namespace VisitorGenerator
             {
                 return null;
             }
-            
+
             foreach (AttributeListSyntax attributeListSyntax in interfaceDecl.AttributeLists)
             {
                 foreach (AttributeSyntax attributeSyntax in attributeListSyntax.Attributes)
                 {
-                    IMethodSymbol? attributeSymbol = context.SemanticModel.GetSymbolInfo(attributeSyntax).Symbol as IMethodSymbol;
+                    IMethodSymbol? attributeSymbol =
+                        context.SemanticModel.GetSymbolInfo(attributeSyntax).Symbol as IMethodSymbol;
                     if (attributeSymbol == null)
                     {
                         continue;
