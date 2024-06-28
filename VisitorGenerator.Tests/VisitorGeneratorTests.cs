@@ -10,13 +10,13 @@ public class VisitorGeneratorTests
     public async Task VisitorWithOneTestTest()
     {
         var code = """
-        using VisitorGenerator;
+using VisitorGenerator;
 
-        [VisitorNode]
-        public partial interface INode {} 
+[VisitorNode]
+public partial interface INode {} 
 
-        public partial class Node : INode {}
-        """;
+public partial class Node : INode {}
+""";
 
         var visitorNodeAttribute = """
 using System;
