@@ -80,47 +80,11 @@ namespace VisitorGenerator
             }
         }
 
-        /// <summary>
-        /// Created on demand before each generation pass
-        /// </summary>
-        class SyntaxReceiver : ISyntaxReceiver
-        {
-            public List<InterfaceDeclarationSyntax> Interfaces { get; } = new List<InterfaceDeclarationSyntax>();
-
-            /// <summary>
-            /// Called for every syntax node in the compilation, we can inspect the nodes and save any information useful for generation
-            /// </summary>
-            public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
-            {
-                // any field with at least one attribute is a candidate for property generation
-                if (syntaxNode is InterfaceDeclarationSyntax { AttributeLists.Count: > 0 } decl)
-                {
-                    var added = false;
-                    foreach (var attributeList in decl.AttributeLists)
-                    {
-                        foreach (var attribute in attributeList.Attributes)
-                        {
-                            if (attribute.ToString() == "VisitorNode")
-                            {
-                                Interfaces.Add(decl);
-                                added = true;
-                                break;
-                            }
-                        }
-
-                        if (added)
-                        {
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
             IncrementalValuesProvider<InterfaceDeclarationSyntax?> classDeclarations = context.SyntaxProvider
-                .CreateSyntaxProvider(
+                .ForAttributeWithMetadataName(
+                    "VisitorGenerator.VisitorNodeAttribute",
                     predicate: static (s, _) => IsSyntaxTargetForGeneration(s),
                     transform: static (ctx, _) => GetSemanticTargetForGeneration(ctx))
                 .Where(static m => m is not null);
@@ -263,39 +227,22 @@ namespace VisitorGenerator
         }
 
         private static bool IsSyntaxTargetForGeneration(SyntaxNode syntaxNode)
-            => syntaxNode is InterfaceDeclarationSyntax { AttributeLists.Count: > 0 };
-
-        static InterfaceDeclarationSyntax? GetSemanticTargetForGeneration(GeneratorSyntaxContext context)
         {
-            var interfaceDecl = context.Node as InterfaceDeclarationSyntax;
+            var result = syntaxNode is InterfaceDeclarationSyntax;
+
+            return result;
+        }
+
+        static InterfaceDeclarationSyntax? GetSemanticTargetForGeneration(GeneratorAttributeSyntaxContext context)
+        {
+            var interfaceDecl = context.TargetNode as InterfaceDeclarationSyntax;
 
             if (interfaceDecl is null)
             {
                 return null;
             }
 
-            foreach (AttributeListSyntax attributeListSyntax in interfaceDecl.AttributeLists)
-            {
-                foreach (AttributeSyntax attributeSyntax in attributeListSyntax.Attributes)
-                {
-                    IMethodSymbol? attributeSymbol =
-                        context.SemanticModel.GetSymbolInfo(attributeSyntax).Symbol as IMethodSymbol;
-                    if (attributeSymbol == null)
-                    {
-                        continue;
-                    }
-
-                    INamedTypeSymbol attributeContainingTypeSymbol = attributeSymbol.ContainingType;
-                    string fullName = attributeContainingTypeSymbol.ToDisplayString();
-
-                    if (fullName == "VisitorGenerator.VisitorNodeAttribute")
-                    {
-                        return interfaceDecl;
-                    }
-                }
-            }
-
-            return null;
+            return interfaceDecl;
         }
     }
 }

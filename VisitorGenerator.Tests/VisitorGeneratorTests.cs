@@ -24,7 +24,7 @@ namespace VisitorGenerator
 {
     [AttributeUsage(AttributeTargets.Interface, Inherited = false, AllowMultiple = false)]
     [System.Diagnostics.Conditional("VisitorSourceGenerator_DEBUG")]
-    sealed class VisitorNodeAttribute : Attribute
+    public sealed class VisitorNodeAttribute : Attribute
     {
         public VisitorNodeAttribute()
         {
@@ -60,10 +60,17 @@ public partial class Node
         {
             TestState = 
             {
+                AdditionalProjects =
+                {
+                    ["DependencyProject"] =
+                    {
+                        Sources = { visitorNodeAttribute },
+                    },
+                },
+                AdditionalProjectReferences = { "DependencyProject" },
                 Sources = { code },
                 GeneratedSources =
                 {
-                    (typeof(VisitorSourceGenerator), "VisitorNodeAttribute.g.cs", SourceText.From(visitorNodeAttribute, Encoding.UTF8)),
                     (typeof(VisitorSourceGenerator), "Node.g.cs", SourceText.From(partialNode, Encoding.UTF8)),
                     (typeof(VisitorSourceGenerator), "INodeVisitor.g.cs", SourceText.From(visitorInterfaces, Encoding.UTF8)),
                 },

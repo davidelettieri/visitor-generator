@@ -25,6 +25,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\VisitorGenerator.Attributes\VisitorGenerator.Attributes.csproj" />
       <ProjectReference Include="..\VisitorGenerator\VisitorGenerator.csproj" />
     </ItemGroup>
 

@@ -4,6 +4,6 @@ namespace VisitorGenerator
 {
     [AttributeUsage(AttributeTargets.Interface)]
     [System.Diagnostics.Conditional("VisitorSourceGenerator_DEBUG")]
-    public sealed class VisitorNodeAttribute : System.Attribute
+    public sealed class VisitorNodeAttribute : Attribute
     {}
 }
