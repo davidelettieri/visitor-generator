@@ -17,7 +17,7 @@
 	</ItemGroup>
 	<ItemGroup>
 		<None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-		<None Include="$(OutputPath)\VisitorGenerator.Attribute.dll" Pack="true" PackagePath="lib\netstandard2.0" Visible="true" />
+		<None Include="$(OutputPath)\VisitorGenerator.Attributes.dll" Pack="true" PackagePath="lib\netstandard2.0" Visible="true" />
 	</ItemGroup>
 	<ItemGroup>
 	  <ProjectReference Include="..\VisitorGenerator.Attributes\VisitorGenerator.Attributes.csproj" PrivateAssets="all" />
