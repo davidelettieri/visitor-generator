@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VisitorGenerator.Samples", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VisitorGenerator.Tests", "VisitorGenerator.Tests\VisitorGenerator.Tests.csproj", "{41E9733F-0161-4FC0-BAB5-C5A05B88B4C2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VisitorGenerator.Attributes", "VisitorGenerator.Attributes\VisitorGenerator.Attributes.csproj", "{1FF9F17B-3592-4AAD-B5B0-0C4366C1AC91}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{41E9733F-0161-4FC0-BAB5-C5A05B88B4C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{41E9733F-0161-4FC0-BAB5-C5A05B88B4C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{41E9733F-0161-4FC0-BAB5-C5A05B88B4C2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1FF9F17B-3592-4AAD-B5B0-0C4366C1AC91}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1FF9F17B-3592-4AAD-B5B0-0C4366C1AC91}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1FF9F17B-3592-4AAD-B5B0-0C4366C1AC91}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1FF9F17B-3592-4AAD-B5B0-0C4366C1AC91}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

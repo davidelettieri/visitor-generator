@@ -1,5 +1,4 @@
-﻿using System;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
@@ -9,16 +8,11 @@ using System.Text;
 
 namespace VisitorGenerator
 {
-    public class Walker : CSharpSyntaxWalker
+    public class Walker(string interfaceName) : CSharpSyntaxWalker
     {
-        public List<ClassDeclarationSyntax> ImplementingTypes { get; } = new List<ClassDeclarationSyntax>();
+        public List<ClassDeclarationSyntax> ImplementingTypes { get; } = [];
 
-        public Walker(string interfaceName)
-        {
-            InterfaceName = interfaceName;
-        }
-
-        private string InterfaceName { get; }
+        private string InterfaceName { get; } = interfaceName;
 
         public override void VisitClassDeclaration(ClassDeclarationSyntax node)
         {
@@ -38,21 +32,6 @@ namespace VisitorGenerator
     [Generator(LanguageNames.CSharp)]
     public class VisitorSourceGenerator : IIncrementalGenerator
     {
-        private const string AttributeText = """
-                                             using System;
-                                             namespace VisitorGenerator
-                                             {
-                                                 [AttributeUsage(AttributeTargets.Interface, Inherited = false, AllowMultiple = false)]
-                                                 [System.Diagnostics.Conditional("VisitorSourceGenerator_DEBUG")]
-                                                 sealed class VisitorNodeAttribute : Attribute
-                                                 {
-                                                     public VisitorNodeAttribute()
-                                                     {
-                                                     }
-                                                 }
-                                             }
-                                             """;
-
         private static void AddVisitorInterface(Walker walker, StringBuilder sb, bool indentInterface,
             string interfaceName)
         {
@@ -93,11 +72,11 @@ namespace VisitorGenerator
             sb.Append("}");
         }
 
-        private static void IndentCurrentLineIfRequired(bool indent, StringBuilder nodeSB)
+        private static void IndentCurrentLineIfRequired(bool indent, StringBuilder nodeStringBuilder)
         {
             if (indent)
             {
-                nodeSB.Append("    ");
+                nodeStringBuilder.Append("    ");
             }
         }
 
@@ -114,7 +93,7 @@ namespace VisitorGenerator
             public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
             {
                 // any field with at least one attribute is a candidate for property generation
-                if (syntaxNode is InterfaceDeclarationSyntax decl && decl.AttributeLists.Count > 0)
+                if (syntaxNode is InterfaceDeclarationSyntax { AttributeLists.Count: > 0 } decl)
                 {
                     var added = false;
                     foreach (var attributeList in decl.AttributeLists)
@@ -150,7 +129,6 @@ namespace VisitorGenerator
                 compilationAndClasses =
                     context.CompilationProvider.Combine(classDeclarations.Collect());
 
-            context.RegisterPostInitializationOutput(i => i.AddSource("VisitorNodeAttribute.g.cs", AttributeText));
             context.RegisterSourceOutput(compilationAndClasses,
                 static (spc, source) => Execute(source.Left, source.Right, spc));
         }
@@ -285,7 +263,7 @@ namespace VisitorGenerator
         }
 
         private static bool IsSyntaxTargetForGeneration(SyntaxNode syntaxNode)
-            => syntaxNode is InterfaceDeclarationSyntax { AttributeLists.Count: > 0 } ids;
+            => syntaxNode is InterfaceDeclarationSyntax { AttributeLists.Count: > 0 };
 
         static InterfaceDeclarationSyntax? GetSemanticTargetForGeneration(GeneratorSyntaxContext context)
         {

@@ -13,7 +13,7 @@ public partial interface IExpr
 {
 }
 
-public partial interface IStmt
+public interface IStmt
 {
 }
 

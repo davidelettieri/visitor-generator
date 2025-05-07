@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Testing;
@@ -13,7 +12,7 @@ public class CSharpSourceGeneratorTest<TSourceGenerator, TVerifier> : SourceGene
         Enum.TryParse("Default", out LanguageVersion version) ? version : LanguageVersion.CSharp6;
 
     protected override IEnumerable<Type> GetSourceGenerators()
-        => new[] { typeof(TSourceGenerator) };
+        => [typeof(TSourceGenerator)];
 
     protected override string DefaultFileExt => "cs";
 
