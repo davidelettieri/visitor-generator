@@ -20,9 +20,11 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 9.0.x
+      - name: Login to github registry
+        run: dotnet nuget add source --username visitor-generator --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/davidelettieri/index.json"
       - name: Restore dependencies
         run: dotnet restore
       - name: Build
         run: dotnet build --no-restore
-      - name: 
+      - name: Test
         run: dotnet test --no-build --verbosity n
